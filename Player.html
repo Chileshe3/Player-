@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Sonic Music</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        :root {
+            --primary: #7C3AED;
+            --primary-dark: #5B21B6;
+            --bg-dark: #0F172A;
+            --bg-card: #1E293B;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: none;
+        }
+
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 20px;
+            background: var(--bg-dark);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-container {
+            position: relative;
+            margin-top: 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid #2D3748;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        /* Categories */
+        .categories {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            white-space: nowrap;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .category.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Music List */
+        .music-list {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 200px;
+        }
+
+        .music-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .music-card:active {
+            transform: scale(0.98);
+        }
+
+        .music-thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .music-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .music-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .music-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .music-artist {
+            color: var(--text-secondary);
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .music-duration {
+            color: var(--text-secondary);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* Player */
+        .player {
+            background: var(--bg-card);
+            border-radius: 24px 24px 0 0;
+            padding: 24px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .now-playing {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .track-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .track-info .music-title {
+            font-size: 18px;
+        }
+
+        .progress-container {
+            position: relative;
+            padding: 10px 0;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #2D3748;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        .progress-handle {
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .progress-container:active .progress-handle {
+            display: block;
+        }
+
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .play-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Permission Overlay */
+        .permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .permission-overlay h2 {
+            margin-bottom: 12px;
+        }
+
+        .permission-overlay p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .permission-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--bg-card);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Permission Overlay -->
+    <div id="permissionOverlay" class="permission-overlay">
+        <h2>Storage Permission Required</h2>
+        <p>Please allow access to your device storage to scan for music files.</p>
+        <button id="permissionBtn" class="permission-btn">Grant Permission</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Scanning music files...</div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Sonic Music</h1>
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search songs, artists..." id="searchInput">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="categories">
+            <div class="category active">All Songs</div>
+            <div class="category">Recently Played</div>
+            <div class="category">Favorites</div>
+            <div class="category">Playlists</div>
+            <div class="category">Albums</div>
+        </div>
+
+        <!-- Music List -->
+        <div class="music-list" id="musicList">
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="fas fa-music"></i>
+                <p>No music files found</p>
+            </div>
+        </div>
+
+        <!-- Player -->
+        <div class="player">
+            <div class="now-playing">
+                <div class="music-thumbnail" id="currentThumbnail">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="track-info">
+                    <div class="music-title" id="currentTitle">Select a song</div>
+                    <div class="music-artist" id="currentArtist">-</div>
+                </div>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                    <div class="progress-handle"></div>
+                </div>
+                <div class="time-info">
+                    <span id="currentTime">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn" id="shuffleBtn">
+                    <i class="fas fa-random"></i>
+                </button>
+                <button class="control-btn" id="prevBtn">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button class="control-btn play-btn" id="playBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="control-btn" id="nextBtn">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+                <button class="control-btn" id="repeatBtn">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cordova Scripts -->
+    <script type="text/javascript" src="cordova.js"></script>
+    <script>
+        document.addEventListener('deviceready', onDeviceReady, false);
+
+        // App State
+        let musicLibrary = [];
+        let filteredLibrary = [];
+        let currentTrack = null;
+        let mediaPlayer = null;
+        let isPlaying = false;
+        let isShuffle = false;
+        let isRepeat = false;
+        let playbackPosition = 0;
+        let updateProgressInterval = null;
+
+        // DOM Elements
+        const searchInput = document.getElementById('searchInput');
+        const musicList = document.getElementById('musicList');
+        const permissionOverlay = document.getElementById('permissionOverlay');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const currentTitle = document.getElementById('currentTitle');
+        const currentArtist = document.getElementById('currentArtist');
+        const currentThumbnail = document.getElementById('currentThumbnail');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationEl = document.getElementById('duration');
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+
+        function onDeviceReady() {
+            // Initialize plugins
+            window.screen.orientation.lock('portrait');
+            
+            // Setup event listeners
+            document.getElementById('permissionBtn').addEventListener('click', requestPermissions);
+            document.addEventListener('backbutton', onBackKeyDown, false);
+            setupEventListeners();
+            
+            // Setup media controls
+            setupMediaControls();
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            searchInput.addEventListener('input', handleSearch);
+
+            // Player controls
+            playBtn.addEventListener('click', togglePlay);
+            prevBtn.addEventListener('click', playPrevious);
+            nextBtn.addEventListener('click', playNext);
+            shuffleBtn.addEventListener('click', toggleShuffle);
+            repeatBtn.addEventListener('click', toggleRepeat);
+// Progress bar
+            progressContainer.addEventListener('click', seekToPosition);
+            
+            // Category selection
+            document.querySelectorAll('.category').forEach(category => {
+                category.addEventListener('click', () => {
+                    document.querySelector('.category.active').classList.remove('active');
+                    category.classList.add('active');
+                });
+            });
+        }
+
+        function requestPermissions() {
+            const permissions = cordova.plugins.permissions;
+            const requiredPermissions = [
+                permissions.READ_EXTERNAL_STORAGE,
+                permissions.WRITE_EXTERNAL_STORAGE
+            ];
+
+            permissions.requestPermissions(requiredPermissions, 
+                () => {
+                    permissionOverlay.style.display = 'none';
+                    loadingOverlay.style.display = 'flex';
+                    scanMusicFiles();
+                }, 
+                () => {
+                    alert('Storage permission is required to use this app.');
+                }
+            );
+        }
+
+        function scanMusicFiles() {
+            window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function(dirEntry) {
+                searchMusicRecursively(dirEntry);
+            }, function(error) {
+                console.error('Error accessing file system:', error);
+                showError('Could not access device storage');
+            });
+        }
+
+        function searchMusicRecursively(dirEntry) {
+            let directoryReader = dirEntry.createReader();
+            let readEntries = function() {
+                directoryReader.readEntries(function(entries) {
+                    if (entries.length) {
+                        processEntries(entries);
+                        readEntries();
+                    } else {
+                        // No more entries, scanning complete
+                        finishScanning();
+                    }
+                }, function(error) {
+                    console.error('Error reading entries:', error);
+                });
+            };
+            readEntries();
+        }
+
+        function processEntries(entries) {
+            entries.forEach(entry => {
+                if (entry.isDirectory) {
+                    searchMusicRecursively(entry);
+                } else if (entry.isFile && isMusicFile(entry.name)) {
+                    addToMusicLibrary(entry);
+                }
+            });
+        }
+
+        function isMusicFile(filename) {
+            const musicExtensions = ['.mp3', '.m4a', '.aac', '.wav', '.ogg'];
+            return musicExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+        }
+
+        function addToMusicLibrary(fileEntry) {
+            fileEntry.file(function(file) {
+                // Get metadata using cordova-plugin-music-metadata
+                window.musicMetadata.getMetadata(fileEntry.nativeURL, 
+                    function(metadata) {
+                        const track = {
+                            id: musicLibrary.length + 1,
+                            title: metadata.title || fileEntry.name.replace(/\.[^/.]+$/, ""),
+                            artist: metadata.artist || 'Unknown Artist',
+                            album: metadata.album || 'Unknown Album',
+                            duration: metadata.duration || 0,
+                            artwork: metadata.artwork || null,
+                            url: fileEntry.nativeURL
+                        };
+                        musicLibrary.push(track);
+                        updateMusicList();
+                    },
+                    function(error) {
+                        console.error('Error reading metadata:', error);
+                    }
+                );
+            });
+        }
+
+        function finishScanning() {
+            loadingOverlay.style.display = 'none';
+            if (musicLibrary.length === 0) {
+                showEmptyState();
+            }
+            sortMusicLibrary();
+            updateMusicList();
+        }
+
+        function sortMusicLibrary() {
+            musicLibrary.sort((a, b) => a.title.localeCompare(b.title));
+            filteredLibrary = [...musicLibrary];
+        }
+
+        function updateMusicList() {
+            musicList.innerHTML = '';
+            if (filteredLibrary.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            filteredLibrary.forEach((track, index) => {
+                const card = createMusicCard(track, index);
+                musicList.appendChild(card);
+            });
+        }
+
+        function createMusicCard(track, index) {
+            const card = document.createElement('div');
+            card.className = 'music-card';
+            card.innerHTML = `
+                <div class="music-thumbnail">
+                    ${track.artwork ? 
+                        `<img src="data:image/jpeg;base64,${track.artwork}" alt="${track.title}">` :
+                        '<i class="fas fa-music"></i>'}
+                </div>
+                <div class="music-info">
+                    <div class="music-title">${track.title}</div>
+                    <div class="music-artist">${track.artist}</div>
+                </div>
+                <div class="music-duration">${formatDuration(track.duration)}</div>
+            `;
+            card.addEventListener('click', () => playTrack(index));
+            return card;
+        }
+
+        function handleSearch(event) {
+            const searchTerm = event.target.value.toLowerCase();
+            filteredLibrary = musicLibrary.filter(track => 
+                track.title.toLowerCase().includes(searchTerm) ||
+                track.artist.toLowerCase().includes(searchTerm)
+            );
+            updateMusicList();
+        }
+
+        function playTrack(index) {
+            if (mediaPlayer) {
+                mediaPlayer.release();
+            }
+
+            currentTrack = index;
+            const track = filteredLibrary[currentTrack];
+            
+            // Create new media instance
+            mediaPlayer = new Media(
+                track.url,
+                () => {
+                    // Playback finished successfully
+                    if (isRepeat) {
+                        playTrack(currentTrack);
+                    } else {
+                        playNext();
+                    }
+                },
+                (error) => {
+                    console.error('Media Error:', error);
+                    showError('Error playing track');
+                },
+                (status) => {
+                    // Status callback
+                    if (status === Media.MEDIA_STOPPED) {
+                        resetPlayer();
+                    }
+                }
+            );
+
+            // Update UI
+            updateNowPlaying(track);
+            startPlayback();
+        }
+
+        function updateNowPlaying(track) {
+            currentTitle.textContent = track.title;
+            currentArtist.textContent = track.artist;
+            if (track.artwork) {
+                currentThumbnail.innerHTML = `<img src="data:image/jpeg;base64,${track.artwork}" alt="${track.title}">`;
+            } else {
+                currentThumbnail.innerHTML = '<i class="fas fa-music"></i>';
+            }
+            durationEl.textContent = formatDuration(track.duration);
+        }
+
+        function startPlayback() {
+            mediaPlayer.play();
+            isPlaying = true;
+            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            startProgressUpdate();
+            updateMediaControls();
+        }
+
+        function togglePlay() {
+            if (!mediaPlayer) return;
+
+            if (isPlaying) {
+                mediaPlayer.pause();
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                clearInterval(updateProgressInterval);
+            } else {
+                mediaPlayer.play();
+                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                startProgressUpdate();
+            }
+            isPlaying = !isPlaying;
+            updateMediaControls();
+        }
+
+        function playNext() {
+            if (!mediaPlayer) return;
+            
+            let nextIndex;
+            if (isShuffle) {
+                nextIndex = Math.floor(Math.random() * filteredLibrary.length);
+            } else {
+                nextIndex = (currentTrack + 1) % filteredLibrary.length;
+            }
+            playTrack(nextIndex);
+        }
+
+        function playPrevious() {
+            if (!mediaPlayer) return;
+            
+            let prevIndex;
+            if (isShuffle) {
+                prevIndex = Math.floor(Math.random() * filteredLibrary.length);
+            } else {
+                prevIndex = (currentTrack - 1 + filteredLibrary.length) % filteredLibrary.length;
+            }
+            playTrack(prevIndex);
+        }
+
+        function toggleShuffle() {
+            isShuffle = !isShuffle;
+            shuffleBtn.style.color = isShuffle ? 'var(--primary)' : 'var(--text-primary)';
+        }
+
+        function toggleRepeat() {
+            isRepeat = !isRepeat;
+            repeatBtn.style.color = isRepeat ? 'var(--primary)' : 'var(--text-primary)';
+        }
+
+        function seekToPosition(event) {
+            if (!mediaPlayer) return;
+
+            const rect = progressContainer.getBoundingClientRect();
+            const position = (event.clientX - rect.left) / rect.width;
+            mediaPlayer.getCurrentPosition(
+                (currentPosition) => {
+                    mediaPlayer.seekTo(position * mediaPlayer.getDuration() * 1000);
+                }
+            );
+        }
+
+        function startProgressUpdate() {
+            clearInterval(updateProgressInterval);
+            updateProgressInterval = setInterval(() => {
+                if (mediaPlayer && isPlaying) {
+                    mediaPlayer.getCurrentPosition(
+                        (position) => {
+                            if (position >= 0) {
+                                mediaPlayer.getDuration(duration => {
+                                    const progress = (position / duration) * 100;
+                                    progressBar.style.width = `${progress}%`;
+                                    currentTimeEl.textContent = formatDuration(position);
+                                });
+                            }
+                        }
+                    );
+                }
+            }, 1000);
+        }
+
+        function setupMediaControls() {
+            // Setup media button controls using cordova-plugin-media-controller
+            window.MediaController.setup();
+            window.MediaController.subscribe((action) => {
+                switch(action) {
+                    case window.MediaController.MEDIA_ACTION.PLAY:
+                        togglePlay();
+                        break;
+                    case window.MediaController.MEDIA_ACTION.PAUSE:
+                        togglePlay();
+                        break;
+                    case window.MediaController.MEDIA_ACTION.NEXT:
+                        playNext();
+                        break;
+                    case window.MediaController.MEDIA_ACTION.PREV:
+                        playPrevious();
+                        break;
+                }
+            });
+        }
+
+        function updateMediaControls() {
+            if (!currentTrack) return;
+            
+            const track = filteredLibrary[currentTrack];
+            window.MediaController.updateMetadata({
+                title: track.title,
+                artist: track.artist,
+                album: track.album,
+                artwork: track.artwork,
+                duration: track.duration
+            });
+            window.MediaController.updateState(isPlaying);
+        }
+
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function showEmptyState() {
+            musicList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-music"></i>
+                    <p>No music files found</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            // You could implement a proper error UI here
+            alert(message);
+        }
+
+        function onBackKeyDown(event) {
+            // Handle back button press
+            if (searchInput.value) {
+                searchInput.value = '';
+                handleSearch({ target: searchInput });
+                event.preventDefault();
+            } else if (document.querySelector('.category.active').textContent !== 'All Songs') {
+                document.querySelector('.category.active').classList.remove('active');
+                document.querySelector('.category').classList.add('active');
+                event.preventDefault();
+            }
+        }
+
+        // Handle app pause/resume
+        document.addEventListener('pause', () => {
+            if (mediaPlayer) {
+                clearInterval(updateProgressInterval);
+            }
+        }, false);
+
+        document.addEventListener('resume', () => {
+            if (mediaPlayer && isPlaying) {
+                startProgressUpdate();
+            }
+        }, false);
+    </script>
+</body>
+</html>
